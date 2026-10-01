@@ -10,30 +10,20 @@ export default {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         display: ['"Outfit"', 'sans-serif'],
+        serif: ['"Instrument Serif"', 'Georgia', 'serif'],
       },
       colors: {
-        slate: {
-          850: '#111a2e',
-          900: '#0b1329',
-          950: '#060913',
-        },
-        brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          900: '#1e3a8a',
+        black: '#000000',
+        obsidian: '#0a0a0a',
+        card: {
+          light: '#e5e5e5',
+          dark: '#121212',
+          highlight: '#d5c7a3', // Warm gold/sand accent card from testimonial screenshot
         },
       },
       boxShadow: {
-        'glow-blue': '0 0 25px -5px rgba(59, 130, 246, 0.25)',
-        'glow-red': '0 0 25px -5px rgba(239, 68, 68, 0.3)',
-        'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.25)',
-      },
-      animation: {
-        'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'glow-slow': 'glow 4s ease-in-out infinite alternate',
+        'editorial': '0 4px 20px rgba(0, 0, 0, 0.4)',
+        'glow-white': '0 0 20px rgba(255, 255, 255, 0.15)',
       },
     },
   },

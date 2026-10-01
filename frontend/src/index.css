@@ -4,11 +4,11 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased min-h-screen selection:bg-blue-600 selection:text-white;
+    @apply bg-black text-neutral-100 font-sans antialiased min-h-screen selection:bg-neutral-200 selection:text-black;
   }
 
   h1, h2, h3 {
-    @apply font-display tracking-tight;
+    @apply font-display tracking-tight font-bold text-white;
   }
 }
 
@@ -18,43 +18,55 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #060913;
+  background: #000000;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #262626;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #404040;
 }
 
-/* Glassmorphism & Card Utilities */
-.glass-panel {
-  background: rgba(11, 19, 41, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* High Contrast Editorial Surfaces */
+.card-light {
+  background: #e4e4e7;
+  color: #09090b;
+  border: 1px solid #d4d4d8;
 }
 
-.glass-card {
-  background: rgba(17, 26, 46, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+.card-highlight {
+  background: #d4c5a0;
+  color: #1c1917;
+  border: 1px solid #c2b186;
 }
 
-.glass-card:hover {
-  border-color: rgba(59, 130, 246, 0.35);
-  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px -3px rgba(59, 130, 246, 0.15);
+.card-obsidian {
+  background: #0d0d0d;
+  color: #f5f5f5;
+  border: 1px solid #262626;
 }
 
-.glow-border-red {
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  box-shadow: 0 0 20px -3px rgba(239, 68, 68, 0.2);
+.btn-black {
+  background: #ffffff;
+  color: #000000;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+.btn-black:hover {
+  background: #e5e5e5;
+  transform: translateY(-1px);
 }
 
-.glow-border-blue {
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  box-shadow: 0 0 20px -3px rgba(59, 130, 246, 0.2);
+.btn-pill {
+  border: 1px solid #404040;
+  background: rgba(255, 255, 255, 0.03);
+  color: #e5e5e5;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+.btn-pill:hover {
+  border-color: #737373;
+  background: rgba(255, 255, 255, 0.08);
 }
