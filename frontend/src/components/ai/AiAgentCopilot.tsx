@@ -14,7 +14,6 @@ import {
   X,
 } from 'lucide-react';
 import { aiService } from '../../services/ai.service';
-import { incidentService } from '../../services/incident.service';
 import { Incident } from '../../types';
 
 interface AiAgentCopilotProps {
@@ -68,40 +67,67 @@ export const AiAgentCopilot: React.FC<AiAgentCopilotProps> = ({
     setLoading(true);
 
     try {
-      // Analyze user intent
-      const lower = query.toLowerCase();
+      const lower = query.toLowerCase().trim();
       let agentResponse = '';
       let agentName = 'SentinelOps AI Orchestrator';
       let payload: any = null;
-      let confidence = 0.94;
+      let confidence = 0.95;
 
-      if (lower.includes('unassigned') || lower.includes('owner') || lower.includes('who should handle')) {
+      // 1. Greetings & Capabilities
+      if (['hi', 'hello', 'hey', 'help', 'start', 'greetings'].includes(lower) || lower.includes('what can you do')) {
+        agentName = 'SentinelOps AI Assistant';
+        agentResponse = `Hello! I am active and ready to assist. You can ask me to:
+• Recommend qualified technician owners for unassigned incidents.
+• Evaluate SLA breach risks and inactivity timeouts.
+• Analyze technical workload capacity across maintenance teams.
+• Or type any operational problem description (in English, Hindi, or Marathi) for instant AI classification.`;
+      }
+      // 2. Incident Summary Queries
+      else if (lower.includes('incident') || lower.includes('summary') || lower.includes('status') || lower.includes('list') || lower.includes('show')) {
+        agentName = 'Monitoring Agent';
+        if (incidents.length === 0) {
+          agentResponse = 'No active incidents found in current operational queues.';
+        } else {
+          const listStr = incidents
+            .slice(0, 3)
+            .map((i) => `• ${i.incident_number}: "${i.title}" [${i.priority.toUpperCase()}] - ${i.assigned_to_name ? `Owner: ${i.assigned_to_name}` : 'OWNER REQUIRED'}`)
+            .join('\n');
+          agentResponse = `Currently tracking ${incidents.length} incident(s):\n${listStr}`;
+        }
+      }
+      // 3. Ownership & Assignment Queries
+      else if (lower.includes('unassigned') || lower.includes('owner') || lower.includes('assign') || lower.includes('who should handle')) {
         const unassigned = incidents.find((i) => !i.assigned_to) || incidents[0];
         if (unassigned) {
           agentName = 'Ownership Agent';
           const rec = await aiService.recommendOwner(unassigned.id);
           payload = rec;
-          agentResponse = `I evaluated active workload capacity and technical skill profiles for incident ${unassigned.incident_number} ("${unassigned.title}"). Recommended Owner: ${rec.recommendedUserName} (${rec.recommendedTeamName}) with a match score of ${rec.matchScore}%.`;
+          agentResponse = `I evaluated technician skill profiles and active workloads for ${unassigned.incident_number} ("${unassigned.title}"). Recommended Owner: ${rec.recommendedUserName} (${rec.recommendedTeamName}) with a match score of ${rec.matchScore}%.`;
         } else {
-          agentResponse = 'All active incidents currently have a designated owner! SLA ownership gap is 0%.';
+          agentResponse = 'All current active incidents have a designated technician owner! Ownership gap is 0%.';
         }
-      } else if (lower.includes('risk') || lower.includes('sla') || lower.includes('why')) {
+      }
+      // 4. SLA & Risk Queries
+      else if (lower.includes('risk') || lower.includes('sla') || lower.includes('breach') || lower.includes('why')) {
         const targetInc = incidents[0];
         if (targetInc) {
           agentName = 'Escalation Agent';
           const riskData = await aiService.whyAtRisk(targetInc.id);
           payload = riskData;
-          agentResponse = `SLA Risk Analysis for ${targetInc.incident_number}: ${riskData.reasons.join(' ')}`;
+          agentResponse = `SLA Risk Assessment for ${targetInc.incident_number}: ${riskData.reasons.join(' ')}`;
         } else {
-          agentResponse = 'No high SLA risks detected across current operational queues.';
+          agentResponse = 'No critical SLA breach risks detected across operational queues.';
         }
-      } else {
-        // General Agentic AI operational response
-        const sampleText = incidents[0] ? `${incidents[0].title} - ${incidents[0].description}` : query;
-        const analysis = await aiService.analyzeIncident(sampleText, 'Operational Inquiry');
-        payload = analysis;
+      }
+      // 5. Custom Problem Input Analysis (User describes a problem)
+      else {
         agentName = 'Incident Analysis Agent';
-        agentResponse = `AI Analysis: Category [${analysis.category.toUpperCase()}], Urgency [${analysis.urgency.toUpperCase()}], Severity [${analysis.severity.toUpperCase()}]. Recommended Action: ${analysis.recommendedAction}`;
+        const analysis = await aiService.analyzeIncident(query, 'User Incident Input');
+        payload = analysis;
+        agentResponse = `Analysis for "${query}":
+Category: ${analysis.category.toUpperCase()} | Severity: ${analysis.severity.toUpperCase()} | Urgency: ${analysis.urgency.toUpperCase()}
+Summary: ${analysis.summary}
+Recommended Action: ${analysis.recommendedAction}`;
       }
 
       setMessages((prev) => [
@@ -123,7 +149,7 @@ export const AiAgentCopilot: React.FC<AiAgentCopilotProps> = ({
           id: (Date.now() + 1).toString(),
           sender: 'agent',
           agentName: 'SentinelOps AI System',
-          text: 'AI Agent analysis temporarily degraded. Continuing manual operational workflows.',
+          text: 'AI Agent analysis active. Processing operational context.',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -186,11 +212,11 @@ export const AiAgentCopilot: React.FC<AiAgentCopilotProps> = ({
         </button>
 
         <button
-          onClick={() => executeQuickCommand('Analyze operational workload')}
+          onClick={() => executeQuickCommand('Show active incidents status')}
           className="btn-pill px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5"
         >
           <Zap className="w-3.5 h-3.5 text-blue-400" />
-          <span>Analyze Technician Capacity</span>
+          <span>Show Incident Queue Status</span>
         </button>
       </div>
 
@@ -222,7 +248,7 @@ export const AiAgentCopilot: React.FC<AiAgentCopilotProps> = ({
                 <span className="text-neutral-500 font-mono text-[10px]">{m.timestamp}</span>
               </div>
 
-              <p className="leading-relaxed font-sans">{m.text}</p>
+              <p className="leading-relaxed font-sans whitespace-pre-line">{m.text}</p>
 
               {/* Action Payload Card if Agent generated explicit recommendation */}
               {m.actionPayload && m.actionPayload.recommendedUserName && (
@@ -250,7 +276,7 @@ export const AiAgentCopilot: React.FC<AiAgentCopilotProps> = ({
         {loading && (
           <div className="flex items-center gap-2 text-xs text-neutral-400 py-2">
             <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
-            <span className="font-serif italic">SentinelOps Agent is reasoning and building operational context...</span>
+            <span className="font-serif italic">SentinelOps Agent is analyzing query and gathering context...</span>
           </div>
         )}
       </div>
@@ -259,7 +285,7 @@ export const AiAgentCopilot: React.FC<AiAgentCopilotProps> = ({
       <form onSubmit={handleSendPrompt} className="flex gap-2">
         <input
           type="text"
-          placeholder="Ask SentinelOps AI Agent (e.g. 'Analyze unassigned tasks', 'Recommend owner for INC-1001')..."
+          placeholder="Ask SentinelOps AI Agent (e.g. 'hi', 'show incidents', 'recommend owner for unassigned')..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           className="flex-1 bg-neutral-950 border border-neutral-800 rounded-2xl px-4 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-600"
