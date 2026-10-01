@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { analyticsService } from '../services/analytics.service';
 import { AuditLog } from '../types';
-import { History, Shield, User, Sparkles, ExternalLink, X, Search, Filter, Eye } from 'lucide-react';
+import { History, User, Sparkles, ExternalLink, X, Search, Eye, AlertTriangle, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export const AuditPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,11 +15,39 @@ export const AuditPage: React.FC = () => {
     analyticsService.getAuditLogs().then(setLogs).catch(console.error);
   }, []);
 
+  // Format raw payload into clean human operational text
+  const formatHumanSummary = (log: AuditLog): string => {
+    const val = log.new_value || log.metadata || {};
+    const payload = val.payload || val;
+
+    if (log.action.includes('ESCALATE')) {
+      return payload.reason
+        ? `Escalation alert triggered. Reason: ${payload.reason}`
+        : 'SLA risk escalation alert dispatched to Supervisor.';
+    }
+    if (log.action.includes('ASSIGN')) {
+      return val.assigned_to
+        ? `Assigned technician owner (ID: ${val.assigned_to.slice(0, 8)}).`
+        : 'Technician assignment recorded.';
+    }
+    if (log.action.includes('CLASSIFY')) {
+      return `AI classification: ${val.category || 'Equipment Failure'} (${val.severity || 'Critical'} Severity).`;
+    }
+    if (log.action.includes('CREATE')) {
+      return val.title ? `Created incident "${val.title}".` : 'New operational incident logged.';
+    }
+    if (log.action.includes('APPROVE') || log.action.includes('REJECT')) {
+      return `Supervisor review status: ${log.action.replace(/_/g, ' ')}.`;
+    }
+    return payload.reason || payload.subject || payload.message || 'Operational state event recorded.';
+  };
+
   const filteredLogs = logs.filter((l) => {
+    const humanText = formatHumanSummary(l);
     const matchesSearch =
       l.action.toLowerCase().includes(search.toLowerCase()) ||
       (l.actor_name && l.actor_name.toLowerCase().includes(search.toLowerCase())) ||
-      l.entity_id.toLowerCase().includes(search.toLowerCase());
+      humanText.toLowerCase().includes(search.toLowerCase());
     const matchesActor = actorFilter === 'ALL' || l.actor_type === actorFilter;
     return matchesSearch && matchesActor;
   });
@@ -34,7 +62,7 @@ export const AuditPage: React.FC = () => {
             <span>System Audit & Traceability Logs</span>
           </h1>
           <p className="text-xs font-serif italic text-neutral-400 mt-1">
-            Append-only immutable record of all human decisions, AI agent actions, assignments, and state transitions. Click any record to inspect full audit details.
+            Append-only immutable record of human decisions, AI agent actions, assignments, and state transitions.
           </p>
         </div>
 
@@ -43,7 +71,7 @@ export const AuditPage: React.FC = () => {
             <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder="Filter by action, actor, ID..."
+              placeholder="Filter events or actors..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-neutral-600"
@@ -70,9 +98,9 @@ export const AuditPage: React.FC = () => {
             <tr>
               <th className="py-3.5 px-4">Timestamp</th>
               <th className="py-3.5 px-4">Actor</th>
-              <th className="py-3.5 px-4">Action</th>
-              <th className="py-3.5 px-4">Entity Target</th>
-              <th className="py-3.5 px-4">Metadata Payload</th>
+              <th className="py-3.5 px-4">Action Event</th>
+              <th className="py-3.5 px-4">Target Entity</th>
+              <th className="py-3.5 px-4">Operational Summary</th>
               <th className="py-3.5 px-4 text-right">Inspect</th>
             </tr>
           </thead>
@@ -108,7 +136,7 @@ export const AuditPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="py-3.5 px-4 font-black uppercase tracking-wider text-white whitespace-nowrap">
-                    {log.action}
+                    {log.action.replace(/_/g, ' ')}
                   </td>
                   <td className="py-3.5 px-4 whitespace-nowrap">
                     <button
@@ -120,14 +148,14 @@ export const AuditPage: React.FC = () => {
                           setSelectedLog(log);
                         }
                       }}
-                      className="inline-flex items-center gap-1 font-mono text-[11px] text-blue-400 hover:text-blue-300 hover:underline font-bold"
+                      className="inline-flex items-center gap-1 font-bold text-xs text-blue-400 hover:text-blue-300 hover:underline"
                     >
-                      <span>{log.entity_type} ({log.entity_id.slice(0, 8)}...)</span>
+                      <span>Open Incident</span>
                       <ExternalLink className="w-3 h-3" />
                     </button>
                   </td>
-                  <td className="py-3.5 px-4 font-mono text-[11px] text-neutral-400 max-w-xs truncate">
-                    {JSON.stringify(log.new_value || log.metadata || {})}
+                  <td className="py-3.5 px-4 text-xs text-neutral-300 max-w-sm truncate font-sans">
+                    {formatHumanSummary(log)}
                   </td>
                   <td className="py-3.5 px-4 text-right whitespace-nowrap">
                     <button
@@ -148,14 +176,14 @@ export const AuditPage: React.FC = () => {
         </table>
       </div>
 
-      {/* Audit Detail Modal Inspector */}
+      {/* Human-Readable Audit Detail Inspector Modal */}
       {selectedLog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden space-y-4 p-6">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <div className="flex items-center gap-2">
                 <History className="w-5 h-5 text-white" />
-                <h3 className="font-extrabold text-base text-white">Audit Log Inspector</h3>
+                <h3 className="font-extrabold text-base text-white">Audit Event Inspector</h3>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
@@ -165,21 +193,21 @@ export const AuditPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3 bg-neutral-950 p-4 rounded-2xl border border-neutral-850">
                 <div>
-                  <span className="text-neutral-500 block text-[10px] font-mono uppercase">Action Event</span>
-                  <span className="font-black text-white text-sm uppercase">{selectedLog.action}</span>
+                  <span className="text-neutral-500 block text-[10px] font-mono uppercase">Event Action</span>
+                  <span className="font-black text-white text-sm uppercase">{selectedLog.action.replace(/_/g, ' ')}</span>
                 </div>
 
                 <div>
-                  <span className="text-neutral-500 block text-[10px] font-mono uppercase">Actor Type & Name</span>
+                  <span className="text-neutral-500 block text-[10px] font-mono uppercase">Actor</span>
                   <span className="font-bold text-amber-300">{selectedLog.actor_name} ({selectedLog.actor_type})</span>
                 </div>
 
                 <div>
-                  <span className="text-neutral-500 block text-[10px] font-mono uppercase">Entity Target ID</span>
-                  <span className="font-mono text-blue-400 font-bold">{selectedLog.entity_type}: {selectedLog.entity_id}</span>
+                  <span className="text-neutral-500 block text-[10px] font-mono uppercase">Target Entity</span>
+                  <span className="font-bold text-blue-400">{selectedLog.entity_type} Record</span>
                 </div>
 
                 <div>
@@ -188,22 +216,38 @@ export const AuditPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Formatted JSON Metadata / New Value */}
-              <div>
-                <span className="text-neutral-400 font-bold block mb-1">New Value / Action Payload:</span>
-                <pre className="bg-black p-4 rounded-2xl border border-neutral-800 text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-48 whitespace-pre-wrap">
-                  {JSON.stringify(selectedLog.new_value || selectedLog.metadata || {}, null, 2)}
-                </pre>
-              </div>
+              {/* Formatted Operational Details Card (No Raw JSON) */}
+              <div className="bg-neutral-950 p-4 rounded-2xl border border-neutral-850 space-y-3">
+                <h4 className="font-bold text-xs text-white uppercase tracking-wider">Operational Summary</h4>
+                <p className="text-xs text-neutral-200 leading-relaxed font-sans">
+                  {formatHumanSummary(selectedLog)}
+                </p>
 
-              {selectedLog.old_value && (
-                <div>
-                  <span className="text-neutral-400 font-bold block mb-1">Previous Value:</span>
-                  <pre className="bg-black p-3 rounded-xl border border-neutral-800 text-[11px] font-mono text-neutral-400 overflow-x-auto whitespace-pre-wrap">
-                    {JSON.stringify(selectedLog.old_value, null, 2)}
-                  </pre>
-                </div>
-              )}
+                {(selectedLog.new_value?.payload?.subject || selectedLog.metadata?.agentType) && (
+                  <div className="pt-3 border-t border-neutral-850 space-y-2 text-xs">
+                    {selectedLog.metadata?.agentType && (
+                      <div>
+                        <span className="text-neutral-500 block text-[10px] font-mono uppercase">Originating Agent</span>
+                        <span className="font-bold text-amber-300">{selectedLog.metadata.agentType}</span>
+                      </div>
+                    )}
+
+                    {selectedLog.new_value?.payload?.subject && (
+                      <div>
+                        <span className="text-neutral-500 block text-[10px] font-mono uppercase">Alert Subject</span>
+                        <span className="font-semibold text-white">{selectedLog.new_value.payload.subject}</span>
+                      </div>
+                    )}
+
+                    {selectedLog.new_value?.payload?.message && (
+                      <div>
+                        <span className="text-neutral-500 block text-[10px] font-mono uppercase">Alert Message Content</span>
+                        <p className="text-neutral-300 italic">{selectedLog.new_value.payload.message}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Modal Actions */}
@@ -218,7 +262,7 @@ export const AuditPage: React.FC = () => {
                   className="btn-black px-4 py-2 text-xs font-bold flex items-center gap-1.5"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open Target Incident ({selectedLog.entity_id.slice(0, 8)}...)</span>
+                  <span>Open Target Incident Command Center</span>
                 </button>
               ) : (
                 <div></div>
