@@ -26,11 +26,21 @@ export const IncidentTimeline: React.FC<IncidentTimelineProps> = ({ updates, aud
         type = 'HUMAN_APPROVED';
       }
 
+      const humanDesc =
+        a.metadata?.policyReason ||
+        a.new_value?.summary ||
+        (typeof a.new_value === 'string' ? a.new_value : null) ||
+        a.new_value?.payload?.reason ||
+        a.new_value?.payload?.message ||
+        a.new_value?.payload?.subject ||
+        a.new_value?.title ||
+        'Operational system action recorded.';
+
       return {
         id: a.id,
         timestamp: a.created_at,
         title: a.action.replace(/_/g, ' '),
-        description: a.metadata?.policyReason || a.new_value?.summary || JSON.stringify(a.new_value || {}),
+        description: humanDesc,
         author: a.actor_name || 'SentinelOps System',
         type,
       };

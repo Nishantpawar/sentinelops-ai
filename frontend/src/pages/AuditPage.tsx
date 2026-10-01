@@ -27,7 +27,7 @@ export const AuditPage: React.FC = () => {
     }
     if (log.action.includes('ASSIGN')) {
       return val.assigned_to
-        ? `Assigned technician owner (ID: ${val.assigned_to.slice(0, 8)}).`
+        ? `Assigned designated technician owner.`
         : 'Technician assignment recorded.';
     }
     if (log.action.includes('CLASSIFY')) {

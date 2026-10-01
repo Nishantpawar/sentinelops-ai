@@ -80,7 +80,7 @@ export const AiInsightsPage: React.FC = () => {
                     <div>
                       <span className="text-neutral-500 block text-[10px] uppercase tracking-wider font-mono">Target Recipient / Incident:</span>
                       <span className="font-bold text-white text-xs">
-                        {act.action_payload?.subject || act.action_payload?.recipientId || 'System Alert'}
+                        {act.action_payload?.subject || (act.action_payload?.recipientId ? 'Supervisor / Technical Lead' : 'System Alert')}
                       </span>
                     </div>
 
