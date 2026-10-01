@@ -5,6 +5,7 @@ import { analyticsService } from '../services/analytics.service';
 import { IncidentTable } from '../components/incidents/IncidentTable';
 import { OwnerRequiredBanner } from '../components/common/OwnerRequiredBanner';
 import { AssignmentModal } from '../components/assignments/AssignmentModal';
+import { AiAgentCopilot } from '../components/ai/AiAgentCopilot';
 import { Incident } from '../types';
 import {
   AlertTriangle,
@@ -12,6 +13,7 @@ import {
   Clock,
   BrainCircuit,
   PlusCircle,
+  Bot,
 } from 'lucide-react';
 import { IncidentCreateModal } from '../components/incidents/IncidentCreateModal';
 import { useNavigate } from 'react-router-dom';
@@ -83,7 +85,10 @@ export const DashboardPage: React.FC = () => {
         />
       )}
 
-      {/* High Contrast KPI Cards (Light & Obsidian contrast inspired by reference screenshots) */}
+      {/* Interactive AI Agent Copilot Bar */}
+      <AiAgentCopilot incidents={incidents} onActionTriggered={fetchData} />
+
+      {/* High Contrast KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="card-light p-6 rounded-2xl space-y-2 shadow-lg">
           <div className="flex items-center justify-between text-xs font-bold text-neutral-800 uppercase tracking-wider">
