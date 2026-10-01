@@ -7,11 +7,15 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        display: ['"Outfit"', 'sans-serif'],
+      },
       colors: {
         slate: {
-          850: '#121e36',
-          900: '#0f172a',
-          950: '#090d16',
+          850: '#111a2e',
+          900: '#0b1329',
+          950: '#060913',
         },
         brand: {
           50: '#eff6ff',
@@ -21,15 +25,16 @@ export default {
           700: '#1d4ed8',
           900: '#1e3a8a',
         },
-        urgent: {
-          500: '#ef4444',
-          600: '#dc2626',
-        }
+      },
+      boxShadow: {
+        'glow-blue': '0 0 25px -5px rgba(59, 130, 246, 0.25)',
+        'glow-red': '0 0 25px -5px rgba(239, 68, 68, 0.3)',
+        'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.25)',
       },
       animation: {
         'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
-      }
+        'glow-slow': 'glow 4s ease-in-out infinite alternate',
+      },
     },
   },
   plugins: [],
